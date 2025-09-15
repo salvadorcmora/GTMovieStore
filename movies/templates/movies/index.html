@@ -8,40 +8,49 @@
         <h2>List of Movies</h2>
         <hr />
         <p class="card-text">
-          <form method="GET">
-            <div class="row">
-              <div class="col-auto">
-                <div class="input-group col-auto">
-                  <div class="input-group-text">
-                    Search</div>
-                  <input type="text" class="form-control"
-                    name="search">
-                </div>
+          <form method="GET" class="mb-3">
+            <div class="row g-2 align-items-end">
+              <div class="col-sm-4">
+                <label class="form-label">Search</label>
+                <input type="text" name="search" value="{{ template_data.search_term }}" class="form-control" placeholder="Search movies...">
               </div>
-              <div class="col-auto">
-                <button class="btn bg-dark text-white"
-                  type="submit">Search</button>
+              <div class="col-sm-3">
+                <label class="form-label">Sort</label>
+                <select name="sort" class="form-select">
+                  <option value="">-- None --</option>
+                  <option value="price_asc"  {% if template_data.sort == 'price_asc' %}selected{% endif %}>Price ↑</option>
+                  <option value="price_desc" {% if template_data.sort == 'price_desc' %}selected{% endif %}>Price ↓</option>
+                  <option value="name_asc"   {% if template_data.sort == 'name_asc' %}selected{% endif %}>Name A–Z</option>
+                  <option value="name_desc"  {% if template_data.sort == 'name_desc' %}selected{% endif %}>Name Z–A</option>
+                </select>
+              </div>
+              <div class="col-sm-3">
+                <label class="form-label">Max Price</label>
+                <input type="number" name="max_price" value="{{ template_data.max_price }}" class="form-control" min="0" placeholder="e.g., 10">
+              </div>
+              <div class="col-sm-2">
+                <button type="submit" class="btn btn-dark w-100">Apply</button>
               </div>
             </div>
           </form>
         </p>
-      </div>
-    </div>
-    <div class="row">
-      {% for movie in template_data.movies %}
-      <div class="col-md-4 col-lg-3 mb-2">
-        <div class="p-2 card align-items-center pt-4">
-          <img src="{{ movie.image.url }}"
-            class="card-img-top rounded img-card-200">
-          <div class="card-body text-center">
-            <a href="{% url 'movies.show' id=movie.id %}"
-              class="btn bg-dark text-white">
-            {{ movie.name }}
-            </a>
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+          {% for movie in template_data.movies %}
+          <div class="col">
+            <div class="card h-100">
+              <img src="{{ movie.image.url }}" class="card-img-top rounded img-card-200">
+              <div class="card-body text-center">
+                <a href="{% url 'movies.show' id=movie.id %}" class="btn bg-dark text-white">
+                  {{ movie.name }}
+                </a>
+              </div>
+            </div>
           </div>
+          {% endfor %}
         </div>
+
       </div>
-      {% endfor %}
     </div>
   </div>
 </div>
