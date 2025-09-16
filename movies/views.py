@@ -1,6 +1,41 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Movie, Review
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+
+FAV_SESSION_KEY = "favorite_movie_ids"
+
+def _get_fav_ids(request):
+    return set(request.session.get(FAV_SESSION_KEY, []))
+
+def _save_fav_ids(request, ids):
+    request.session[FAV_SESSION_KEY] = list(ids)
+    request.session.modified = True
+
+def toggle_favorite(request, id):
+    movie = get_object_or_404(Movie, id=id)
+    favs = _get_fav_ids(request)
+    if id in favs:
+        favs.remove(id)
+        messages.info(request, f"Removed “{movie.name}” from favorites.")
+    else:
+        favs.add(id)
+        messages.success(request, f"Added “{movie.name}” to favorites.")
+    _save_fav_ids(request, favs)
+    # return to referring page or movies index
+    return redirect(request.META.get("HTTP_REFERER") or "movies.index")
+
+def favorites(request):
+    fav_ids = _get_fav_ids(request)
+    movies = Movie.objects.filter(id__in=fav_ids).order_by("name")
+    template_data = {
+        "title": "My Favorites",
+        "movies": movies,
+        "fav_ids": fav_ids,
+    }
+    return render(request, "movies/favorites.html", {"template_data": template_data})
+
 
 def index(request):
     search_term = request.GET.get('search')
@@ -25,13 +60,14 @@ def index(request):
     if sort in sort_map:
         qs = qs.order_by(sort_map[sort])
 
-    template_data = {}
-    template_data['title'] = 'Movies'
-    template_data['movies'] = qs
-    template_data['search_term'] = search_term or ''
-    template_data['sort'] = sort or ''
-    template_data['max_price'] = max_price or ''
-
+    template_data = {
+        'title': 'Movies',
+        'movies': qs,
+        'search_term': search_term or '',
+        'sort': sort or '',
+        'max_price': max_price or '',
+        'fav_ids': _get_fav_ids(request),  # NEW
+    }
     return render(request, 'movies/index.html', {'template_data': template_data})
 
 def show(request, id):
