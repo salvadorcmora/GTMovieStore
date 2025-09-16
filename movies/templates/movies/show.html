@@ -26,6 +26,13 @@
           </form>
         </p>
 
+        <!-- optional: flash messages -->
+        {% if messages %}
+          {% for m in messages %}
+            <div class="alert alert-{{ m.tags|default:'info' }} mb-2">{{ m }}</div>
+          {% endfor %}
+        {% endif %}
+
         <h2>Reviews</h2>
         <hr />
         <ul class="list-group">
@@ -38,15 +45,30 @@
               {{ review.date }}
             </h6>
             <p class="card-text">{{ review.comment }}</p>
+
+            <!-- Author controls -->
             {% if user.is_authenticated and user == review.user %}
-            <a class="btn btn-primary"
-              href="{% url 'movies.edit_review' id=template_data.movie.id review_id=review.id %}">
-              Edit
-            </a>
-            <a class="btn btn-danger"
-              href="{% url 'movies.delete_review' id=template_data.movie.id review_id=review.id %}">
-              Delete
-            </a>
+              <a class="btn btn-primary"
+                 href="{% url 'movies.edit_review' id=template_data.movie.id review_id=review.id %}">
+                Edit
+              </a>
+              <a class="btn btn-danger"
+                 href="{% url 'movies.delete_review' id=template_data.movie.id review_id=review.id %}">
+                Delete
+              </a>
+            {% endif %}
+
+            <!-- Report button: shown to logged-in users who are NOT the author -->
+            {% if user.is_authenticated and user != review.user %}
+              <form action="{% url 'movies.report_review' id=template_data.movie.id review_id=review.id %}"
+                    method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-outline-danger"
+                        onclick="return confirm('Report this review as inappropriate?');">
+                  Report
+                </button>
+              </form>
             {% endif %}
           </li>
           {% endfor %}
@@ -79,6 +101,7 @@
         </div>
         {% endif %}
       </div>
+
       <div class="col-md-6 mx-auto mb-3 text-center">
         <img src="{{ template_data.movie.image.url }}" class="rounded img-card-400" />
       </div>
