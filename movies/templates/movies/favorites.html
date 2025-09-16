@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container py-3">
+  <h2>My Favorites</h2>
+  <hr>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+    {% for movie in template_data.movies %}
+      <div class="col">
+        <div class="card h-100">
+          <img src="{{ movie.image.url }}" class="card-img-top rounded img-card-200" alt="{{ movie.name }}">
+          <div class="card-body text-center">
+            <a href="{% url 'movies.show' id=movie.id %}" class="btn bg-dark text-white">{{ movie.name }}</a>
+            <div class="mt-2">
+              <a href="{% url 'movies.toggle_favorite' movie.id %}" class="text-danger" title="Remove from favorites">♥</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>You have no favorites yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
