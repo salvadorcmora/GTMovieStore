@@ -158,3 +158,70 @@ def report_review(request, id, review_id):
         messages.info(request, "This review has already been reported.")
 
     return redirect('movies.show', id=id)
+
+def petitions_list(request):
+    # annotate each petition with its yes-vote count, then sort highest first
+    petitions = (
+        Petition.objects
+        .annotate(num_votes=Count('votes'))
+        .order_by('-num_votes', '-created_at')
+    )
+
+    voted_ids = set()
+    if request.user.is_authenticated:
+        voted_ids = set(
+            PetitionVote.objects
+            .filter(user=request.user)
+            .values_list("petition_id", flat=True)
+        )
+
+    template_data = {
+        "title": "Petitions",
+        "petitions": petitions,
+        "voted_ids": voted_ids,
+    }
+    return render(request, "movies/petitions_list.html", {"template_data": template_data})
+
+
+
+@login_required
+def petitions_create(request):
+    if request.method == "GET":
+        template_data = {"title": "Create Petition"}
+        return render(request, "movies/petitions_create.html", {"template_data": template_data})
+
+    # POST
+    title = (request.POST.get("title") or "").strip()
+    description = (request.POST.get("description") or "").strip()
+
+    if not title:
+        messages.error(request, "Title is required.")
+        return redirect("movies.petitions_create")
+
+    Petition.objects.create(
+        title=title,
+        description=description,
+        created_by=request.user,
+    )
+    messages.success(request, "Your petition was created.")
+    return redirect("movies.petitions_list")
+
+
+@login_required
+@require_POST
+def petition_vote_yes(request, id):
+    petition = get_object_or_404(Petition, id=id)
+
+    # optional: disallow self-vote
+    if petition.created_by_id == request.user.id:
+        messages.error(request, "You cannot vote on your own petition.")
+        return redirect("movies.petitions_list")
+
+    obj, created = PetitionVote.objects.get_or_create(
+        petition=petition, user=request.user
+    )
+    if created:
+        messages.success(request, "Thanks — your 'Yes' vote was recorded.")
+    else:
+        messages.info(request, "You already voted 'Yes' on this petition.")
+    return redirect("movies.petitions_list")
